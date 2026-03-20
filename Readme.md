@@ -1,4 +1,4 @@
-# Backend Project
+# Backend for a YouTube-like Video Platform
 
 Series on backend with javascript
 
