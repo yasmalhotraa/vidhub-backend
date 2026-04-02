@@ -26,4 +26,23 @@ const uploadOnCloudinary = async (localFilePath) => {
   }
 };
 
+const deleteFromCloudinary = async (publicId) => {
+  try {
+    if (!publicId) return null;
+
+    const response = await cloudinary.uploader.destroy(publicId, {
+      resource_type: "auto",
+    });
+
+    if (!response.ok) {
+      console.log("Could not delete the asset");
+    }
+
+    console.log(response, " is deleted from cloudinary");
+    return response;
+  } catch (error) {
+    return null;
+  }
+};
+
 export { uploadOnCloudinary };
