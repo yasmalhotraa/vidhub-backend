@@ -21,8 +21,18 @@ app.use(cookieParser());
 
 // routes
 import userRouter from "./routes/user.routes.js";
+import { ApiError } from "./utils/ApiError.js";
 
 // routes declaration
 app.use("/api/v1/users", userRouter);
+
+app.use("/", async (err, req, res, next) => {
+  if (err instanceof ApiError) {
+    return res.status(err.statusCode).json({ error: err.message });
+  }
+
+  console.log(err);
+  return res.status(500).json({ error: "Something went wrong" });
+});
 
 export { app };
