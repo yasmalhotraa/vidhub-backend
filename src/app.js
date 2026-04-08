@@ -26,13 +26,15 @@ import { ApiError } from "./utils/ApiError.js";
 // routes declaration
 app.use("/api/v1/users", userRouter);
 
-app.use("/", async (err, req, res, next) => {
-  if (err instanceof ApiError) {
-    return res.status(err.statusCode).json({ error: err.message });
-  }
+app.use((req, res) => {
+  return res.status(404).send("Route does not exist");
+});
 
-  console.log(err);
-  return res.status(500).json({ error: "Something went wrong" });
+app.use((err, req, res, next) => {
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Something went wrong";
+
+  return res.status(statusCode).json({ message });
 });
 
 export { app };
