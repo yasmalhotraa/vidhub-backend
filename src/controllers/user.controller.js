@@ -300,7 +300,16 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   }
 
   // get current user
-  const existingUser = await User.findById(req.user?._id);
+  const existingUser = await User.findById(req.user?._id).select(
+    "avatar.public_id"
+  );
+
+  if (!existingUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // get old avatar public id
+  const oldAvatarId = existingUser?.avatar?.public_id;
 
   // upload new avatar FIRST
   const avatar = await uploadOnCloudinary(avatarLocalPath);
@@ -323,11 +332,19 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     { new: true }
   ).select("-password");
 
-  console.log(existingUser?.avatar?.public_id);
+  // if failed to update
+  if (!updatedUser) {
+    await deleteFromCloudinary(avatar.public_id);
+    throw new ApiError(500, "Failed to update avatar");
+  }
 
-  // delete old avatar AFTER success
-  if (existingUser?.avatar?.public_id) {
-    await deleteFromCloudinary(existingUser.avatar.public_id);
+  // delete old avatar after success
+  try {
+    if (oldAvatarId) {
+      await deleteFromCloudinary(oldAvatarId);
+    }
+  } catch (error) {
+    console.log("Failed to delete old avatar", error);
   }
 
   return res
@@ -342,7 +359,15 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Cover image file is missing.");
   }
 
-  const existingUser = await User.findById(req.user?._id);
+  const existingUser = await User.findById(req.user?._id).select(
+    "coverImage.public_id"
+  );
+
+  if (!existingUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const oldCoverImageId = existingUser?.coverImage?.public_id;
 
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
@@ -363,8 +388,17 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     { new: true }
   ).select("-password");
 
-  if (existingUser?.coverImage?.public_id) {
-    await deleteFromCloudinary(existingUser.coverImage.public_id);
+  if (!updatedUser) {
+    await deleteFromCloudinary(coverImage.public_id);
+    throw new ApiError(500, "Failed to update cover image");
+  }
+
+  try {
+    if (oldCoverImageId) {
+      await deleteFromCloudinary(oldCoverImageId);
+    }
+  } catch (error) {
+    console.log("Failed to delete old cover image", error);
   }
 
   return res

@@ -39,11 +39,11 @@ const deleteFromCloudinary = async (publicId) => {
       resource_type: "image",
     });
 
-    if (!response.ok) {
+    if (response.result != "ok") {
       console.log("Could not delete the asset");
     }
 
-    console.log(response, " is deleted from cloudinary");
+    console.log(response, "file deleted from cloudinary");
     return response;
   } catch (error) {
     console.log(error);
