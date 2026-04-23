@@ -7,6 +7,7 @@ import {
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -536,7 +537,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      ApiResponse(
+      new ApiResponse(
         200,
         user[0]?.watchHistory,
         "Watch history fetched successfully"
