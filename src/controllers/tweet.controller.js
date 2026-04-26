@@ -67,7 +67,21 @@ const getUserTweets = asyncHandler(async (req, res) => {
     },
     {
       $project: {
+        "owner.email": 0,
+        "owner.watchHistory": 0,
+        "owner.password": 0,
+        "owner.createdAt": 0,
+        "owner.updatedAt": 0,
+        "owner.refreshToken": 0,
+      },
+    },
+    {
+      $project: {
         content: 1,
+        "owner.username": 1,
+        "owner.fullName": 1,
+        "owner.avatar": 1,
+        "owner.coverImage": 1,
       },
     },
   ]);
