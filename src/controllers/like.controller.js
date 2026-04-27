@@ -3,15 +3,81 @@ import { Like } from "../models/like.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { Video } from "../models/video.model.js";
+import { Comment } from "../models/comment.model.js";
+import { Tweet } from "../models/tweet.model.js";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   //TODO: toggle like on video
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Video id is not valid");
+  }
+
+  const video = await Video.findById(videoId);
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  const deleteResponse = await Like.deleteOne({
+    video: videoId,
+    likedBy: req.user?._id,
+  });
+
+  let isLiked;
+
+  if (deleteResponse.deletedCount > 0) {
+    isLiked = false;
+  } else {
+    await Like.create({
+      video: videoId,
+      likedBy: req.user?._id,
+    });
+
+    isLiked = true;
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { isLiked }, "Video like toggled successfully"));
 });
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
   //TODO: toggle like on comment
+
+  if (!isValidObjectId(commentId)) {
+    throw new ApiError(400, "Comment Id is not valid");
+  }
+
+  const comment = await Comment.findById(commentId);
+  if (!comment) {
+    throw new ApiError(404, "Comment not found");
+  }
+
+  const deleteResponse = await Like.deleteOne({
+    comment: commentId,
+    likedBy: req.user?._id,
+  });
+
+  let isLiked;
+
+  if (deleteResponse.deletedCount > 0) {
+    isLiked = false;
+  } else {
+    await Like.create({
+      comment: commentId,
+      likedBy: req.user?._id,
+    });
+
+    isLiked = true;
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { isLiked }, "Comment like toggled successfully")
+    );
 });
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
@@ -22,14 +88,19 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Tweet id is not valid");
   }
 
-  const tweetLikeStatus = await Like.deleteOne({
+  const tweet = await Tweet.findById(tweetId);
+  if (!tweet) {
+    throw new ApiError(404, "Tweet not found");
+  }
+
+  const deleteResponse = await Like.deleteOne({
     tweet: tweetId,
     likedBy: req.user?._id,
   });
 
   let isLiked;
 
-  if (tweetLikeStatus.deletedCount > 0) {
+  if (deleteResponse.deletedCount > 0) {
     isLiked = false;
   } else {
     await Like.create({
