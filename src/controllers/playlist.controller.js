@@ -8,6 +8,28 @@ const createPlaylist = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
 
   //TODO: create playlist
+
+  if ([name, description].some((field) => field?.trim() === "")) {
+    throw new ApiError(400, "Name and Description both are required");
+  }
+
+  const playlist = await Playlist.create({
+    name: name.trim(),
+    description: description.trim(),
+    videos: [],
+    owner: req.user?._id,
+  });
+
+  if (!playlist) {
+    throw new ApiError(
+      500,
+      "Something went wrong while creating the playlist."
+    );
+  }
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, playlist, "Playlist created successfully"));
 });
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
@@ -32,12 +54,59 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 const deletePlaylist = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   // TODO: delete playlist
+  if (!isValidObjectId(playlistId)) {
+    throw new ApiError(400, "Invalid playlist id");
+  }
+
+  const deletePlaylist = await Playlist.findOneAndDelete({
+    _id: playlistId,
+    owner: req.user?._id,
+  });
+
+  if (!deletePlaylist) {
+    throw new ApiError(404, "Playlist not found or access denied");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { deletePlaylist }, "Playlist deleted successfully")
+    );
 });
 
 const updatePlaylist = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   const { name, description } = req.body;
   //TODO: update playlist
+
+  if (!isValidObjectId(playlistId)) {
+    throw new ApiError(400, "Invalid playlist id");
+  }
+
+  if ([name, description].some((field) => field?.trim() === "")) {
+    throw new ApiError(400, "Name and Description both are required");
+  }
+
+  const updatedPlaylist = await Playlist.findOneAndUpdate(
+    {
+      _id: playlistId,
+      owner: req.user?._id,
+    },
+    {
+      name: name.trim(),
+      description: description.trim(),
+    }
+  );
+
+  if (!updatedPlaylist) {
+    throw new ApiError(404, "Playlist not found or access denied");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { updatedPlaylist }, "Playlist updated successfully")
+    );
 });
 
 export {
