@@ -1,4 +1,4 @@
-# Backend for a YouTube-like Video Platform
+# VidHub — Backend System for a Video Platform
 
 Series on backend with javascript
 
