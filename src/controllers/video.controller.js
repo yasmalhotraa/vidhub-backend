@@ -1,5 +1,7 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Video } from "../models/video.model.js";
+import { Like } from "../models/like.model.js";
+import { Comment } from "../models/comment.model.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -144,6 +146,49 @@ const updateVideo = asyncHandler(async (req, res) => {
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   //TODO: delete video
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid Video Id");
+  }
+
+  const deletedVid = await Video.findOneAndDelete({
+    _id: videoId,
+    owner: req.user._id,
+  });
+
+  if (!deletedVid) {
+    throw new ApiError(
+      404,
+      "Video not found or you are not authorized to delete it"
+    );
+  }
+
+  try {
+    const promises = [];
+
+    if (deletedVid?.videoFile?.public_id) {
+      promises.push(
+        deleteFromCloudinary(deletedVid.videoFile.public_id, "video")
+      );
+    }
+
+    if (deletedVid?.thumbnail?.public_id) {
+      promises.push(deleteFromCloudinary(deletedVid.thumbnail.public_id));
+    }
+
+    await Promise.allSettled(promises);
+  } catch (error) {
+    console.log(`Failed to delete video and thumbnail from cloud ${error}`);
+  }
+
+  // delete likes and comments under that video too
+  await Promise.all([
+    Like.deleteMany({ video: videoId }),
+    Comment.deleteMany({ video: videoId }),
+  ]);
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, deletedVid, "Video deleted successfully"));
 });
 
 const togglePublishStatus = asyncHandler(async (req, res) => {

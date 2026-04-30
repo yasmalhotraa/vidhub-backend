@@ -156,6 +156,11 @@ const deleteTweet = asyncHandler(async (req, res) => {
     );
   }
 
+  // delete likes under that tweet too
+  await Like.deleteMany({
+    tweet: tweetId,
+  });
+
   res
     .status(200)
     .json(new ApiResponse(204, deletedTweet, "Tweet deleted successfully"));
