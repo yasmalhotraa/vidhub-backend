@@ -10,6 +10,81 @@ const getVideoComments = asyncHandler(async (req, res) => {
   //TODO: get all comments for a video
   const { videoId } = req.params;
   const { page = 1, limit = 10 } = req.query;
+
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError("Invalid video id");
+  }
+
+  if (isNaN(parseInt(page)) || isNaN(parseInt(limit))) {
+    throw new ApiError(400, "please provide a valid and page and limit");
+  }
+
+  const aggregate = Comment.aggregate([
+    {
+      $match: {
+        video: new mongoose.Types.ObjectId(videoId),
+      },
+    },
+    {
+      $sort: { createdAt: -1 },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    {
+      $unwind: "$owner",
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "comment",
+        as: "likes",
+      },
+    },
+    {
+      $addFields: {
+        likeCount: {
+          $size: "$likes",
+        },
+        isLiked: {
+          $in: [new mongoose.Types.ObjectId(req.user?._id), "$likes.likedBy"],
+        },
+      },
+    },
+    {
+      $project: {
+        content: 1,
+        video: 1,
+        owner: {
+          username: 1,
+          avatar: {
+            url: 1,
+          },
+        },
+        likeCount: 1,
+        isLiked: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    },
+  ]);
+
+  const options = {
+    page: parseInt(page),
+    limit: parseInt(limit),
+  };
+
+  const result = await Comment.aggregatePaginate(aggregate, options);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, result, "Comments fetched successfully"));
 });
 
 const addComment = asyncHandler(async (req, res) => {
