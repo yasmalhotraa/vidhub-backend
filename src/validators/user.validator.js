@@ -2,27 +2,27 @@ import * as z from "zod";
 
 const validRegisterSchema = z.object({
   fullName: z
-    .string({ required_error: "Full name is required" })
+    .string({ error: "Full name is required" })
     .trim()
     .min(3, "Full name must be at least 3 characters"),
 
   email: z
     .string({
-      required_error: "Email is required",
+      error: "Email is required",
     })
     .trim()
     .email("Please provide a valid email"),
 
   username: z
     .string({
-      required_error: "Username is required",
+      error: "Username is required",
     })
     .trim()
     .min(3, "Username must be at least 3 characters"),
 
   password: z
     .string({
-      required_error: "Password is required",
+      error: "Password is required",
     })
     .min(6, "Password must be at least 6 characters"),
 });
@@ -39,7 +39,7 @@ const validLoginSchema = z
 
     password: z
       .string({
-        required_error: "Password is required",
+        error: "Password is required",
       })
       .min(6, "Password must be at least 6 characters"),
   })
@@ -50,13 +50,13 @@ const validLoginSchema = z
 const validChangePassSchema = z.object({
   oldPassword: z
     .string({
-      required_error: "Old password is required",
+      error: "Old password is required",
     })
     .min(6, "Old password must be at least 6 characters"),
 
   newPassword: z
     .string({
-      required_error: "New password is required",
+      error: "New password is required",
     })
     .min(6, "New password must be at least 6 characters"),
 });
@@ -65,7 +65,7 @@ const validUpdateAccountSchema = z
   .object({
     fullName: z
       .string({
-        required_error: "Full name is required",
+        error: "Full name is required",
       })
       .trim()
       .min(3, "Full name must be at least 3 characters")
@@ -73,7 +73,7 @@ const validUpdateAccountSchema = z
 
     email: z
       .string({
-        required_error: "Email is required",
+        error: "Email is required",
       })
       .trim()
       .email("Please provide a valid email")

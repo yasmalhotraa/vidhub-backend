@@ -10,9 +10,10 @@ const createPlaylist = asyncHandler(async (req, res) => {
 
   //TODO: create playlist
 
-  if ([name, description].some((field) => !field || field?.trim() === "")) {
-    throw new ApiError(400, "Name and Description both are required");
-  }
+  // validation (used before implementing zod)
+  // if ([name, description].some((field) => !field || field?.trim() === "")) {
+  //   throw new ApiError(400, "Name and Description both are required");
+  // }
 
   const playlist = await Playlist.create({
     name: name.trim(),
@@ -353,9 +354,10 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid playlist id");
   }
 
-  if ([name, description].some((field) => !field || field?.trim() === "")) {
-    throw new ApiError(400, "Name and Description both are required");
-  }
+  // validation (used before implementing zod)
+  // if ([name, description].some((field) => !field || field?.trim() === "")) {
+  //   throw new ApiError(400, "Name and Description both are required");
+  // }
 
   const updatedPlaylist = await Playlist.findOneAndUpdate(
     {

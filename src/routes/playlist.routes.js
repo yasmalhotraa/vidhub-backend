@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { validate } from "../middlewares/validate.middleware.js";
+import { playlistBodySchema } from "../validators/playlist.validator.js";
 import {
   addVideoToPlaylist,
   createPlaylist,
@@ -14,12 +16,12 @@ const router = Router();
 
 router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
 
-router.route("/").post(createPlaylist);
+router.route("/").post(validate(playlistBodySchema), createPlaylist);
 
 router
   .route("/:playlistId")
   .get(getPlaylistById)
-  .patch(updatePlaylist)
+  .patch(validate(playlistBodySchema), updatePlaylist)
   .delete(deletePlaylist);
 
 router.route("/add/:videoId/:playlistId").patch(addVideoToPlaylist);
