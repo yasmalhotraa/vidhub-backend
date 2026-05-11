@@ -12,7 +12,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
 
   if (!isValidObjectId(videoId)) {
-    throw new ApiError("Invalid video id");
+    throw new ApiError(400, "Invalid video id");
   }
 
   if (isNaN(parseInt(page)) || isNaN(parseInt(limit))) {
@@ -53,7 +53,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
           $size: "$likes",
         },
         isLiked: {
-          $in: [new mongoose.Types.ObjectId(req.user?._id), "$likes.likedBy"],
+          $in: [new mongoose.Types.ObjectId(req.user._id), "$likes.likedBy"],
         },
       },
     },
@@ -96,9 +96,10 @@ const addComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Video id is not valid");
   }
 
-  if (!content || content.trim() === "") {
-    throw new ApiError(400, "Content is required");
-  }
+  // validation (used before implementing zod)
+  // if (!content || content.trim() === "") {
+  //   throw new ApiError(400, "Content is required");
+  // }
 
   const video = await Video.findById(videoId);
   if (!video) {
@@ -108,7 +109,7 @@ const addComment = asyncHandler(async (req, res) => {
   const comment = await Comment.create({
     content,
     video: videoId,
-    owner: req.user?._id,
+    owner: req.user._id,
   });
 
   if (!comment) {
@@ -123,23 +124,24 @@ const addComment = asyncHandler(async (req, res) => {
 const updateComment = asyncHandler(async (req, res) => {
   // TODO: update a comment
   const { commentId } = req.params;
-  const { content: updatedContent } = req.body;
-
-  if (!updatedContent || updatedContent.trim() === "") {
-    throw new ApiError(400, "Content is required");
-  }
+  const { content } = req.body;
 
   if (!isValidObjectId(commentId)) {
     throw new ApiError(400, "Comment id is not valid");
   }
 
+  // validation (used before implementing zod)
+  // if (!content || content.trim() === "") {
+  //   throw new ApiError(400, "Content is required");
+  // }
+
   const updatedComment = await Comment.findOneAndUpdate(
     {
       _id: commentId,
-      owner: req.user?._id,
+      owner: req.user._id,
     },
     {
-      content: updatedContent.trim(),
+      content,
     },
     {
       new: true,
@@ -166,7 +168,7 @@ const deleteComment = asyncHandler(async (req, res) => {
 
   const deleteResponse = await Comment.findOneAndDelete({
     _id: commentId,
-    owner: req.user?._id,
+    owner: req.user._id,
   });
 
   if (!deleteResponse) {
