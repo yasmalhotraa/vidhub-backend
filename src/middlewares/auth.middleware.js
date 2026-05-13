@@ -4,7 +4,6 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 
 export const verifyJWT = asyncHandler(async (req, _, next) => {
-  //if we are not using res -> we can write "_" in place of it
   try {
     const token =
       req.cookies?.accessToken ||
