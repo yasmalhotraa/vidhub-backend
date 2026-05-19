@@ -8,6 +8,7 @@ import {
 } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import redisClient from "../db/redis.js";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -422,12 +423,30 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { username } = req.params;
 
-  console.log(`Username : ${username}`);
+  // checking data inside redis first
+  const cacheKey = `channel:profile:${username}:${req.user?._id}`;
+
+  const cachedChannelProfile = await redisClient.get(cacheKey);
+
+  if (cachedChannelProfile) {
+    console.log("Cache hit");
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          JSON.parse(cachedChannelProfile),
+          "User channel fetched successfully (cache hit)"
+        )
+      );
+  }
 
   // validation (used before implementing zod)
   // if (!username?.trim()) {
   //   throw new ApiError(400, "Username is missing");
   // }
+
+  console.log("Cache miss");
 
   const channel = await User.aggregate([
     {
@@ -487,10 +506,18 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     throw new ApiError(400, "channel does not exists");
   }
 
+  await redisClient.set(cacheKey, JSON.stringify(channel[0]), {
+    EX: 600,
+  });
+
   return res
     .status(200)
     .json(
-      new ApiResponse(200, channel[0], "User channel fetched successfully")
+      new ApiResponse(
+        200,
+        channel[0],
+        "User channel fetched successfully (cache miss)"
+      )
     );
 });
 

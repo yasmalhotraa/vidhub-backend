@@ -6,6 +6,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Comment } from "../models/comment.model.js";
+import redisClient from "../db/redis.js";
 
 const getChannelStats = asyncHandler(async (req, res) => {
   // TODO: Get the channel stats like total video views, total subscribers, total videos, total likes etc.
@@ -16,6 +17,25 @@ const getChannelStats = asyncHandler(async (req, res) => {
   // total comments
 
   const userId = new mongoose.Types.ObjectId(req.user._id);
+
+  const cacheKey = `channel:stats:${req.user._id}`;
+
+  const cachedChannelStats = await redisClient.get(cacheKey);
+
+  if (cachedChannelStats) {
+    console.log("Cache hit");
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          JSON.parse(cachedChannelStats),
+          "Channel stats fetched successfully"
+        )
+      );
+  }
+
+  console.log("Cache miss");
 
   // Get total views and videos
   const videoStats = await Video.aggregate([
@@ -153,19 +173,21 @@ const getChannelStats = asyncHandler(async (req, res) => {
 
   const commentStats = comments[0]?.totalComments || 0;
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        totalVideos: vStats.totalVideos,
-        totalViews: vStats.totalViews,
-        totalSubscribers,
-        totalLikes: likeStats,
-        totalComments: commentStats,
-      },
-      "Channel stats fetched successfully"
-    )
-  );
+  const statsData = {
+    totalVideos: vStats.totalVideos,
+    totalViews: vStats.totalViews,
+    totalSubscribers,
+    totalLikes: likeStats,
+    totalComments: commentStats,
+  };
+
+  await redisClient.set(cacheKey, JSON.stringify(statsData), { EX: 300 });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, statsData, "Channel stats fetched successfully")
+    );
 });
 
 const getChannelVideos = asyncHandler(async (req, res) => {
